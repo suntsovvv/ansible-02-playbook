@@ -41,83 +41,32 @@
     - name: Start vector service
       become: true
       ansible.builtin.service:
-        name: vector-server
+        name: vector
         state: restarted
   tasks:   
     - name: Get vector distrib
       ansible.builtin.get_url:
-       url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-{{ vector_arch }}-unknown-linux-musl.tar.gz"
-       dest: "./vector-{{ vector_version }}.tar.gz"
+       url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-1.{{ vector_arch }}.rpm"
+       dest: "./vector-{{ vector_version }}.rpm"
        validate_certs: no
-            #notify: Start vector service 
+       
+    - name: Install vector packages
+      become: true
+      ansible.builtin.yum:
+        name:
+           - vector-{{ vector_version }}.rpm
+
+    - name: Configure Vector | Ensure config directory exists
+      ansible.builtin.file:
+        path: "{{ vector_config_path }}"
+        state: directory
+        mode: "0755"
+
+    - name: Configure Vector | Template config
+      ansible.builtin.template:
+        src: vector.toml.j2
+        mode: "0644"
+        dest: "{{ vector_config_path }}/vector.toml"
+    - name: Start vector
+      ansible.builtin.shell: vector --config /etc/vector/vector.toml
      
-     
-     
-     # - name: Get vector distrib
-#       ansible.builtin.get_url:
-#         url: "https://packages.timber.io/vector/{{ vector_version }}/vector_{{ vector_version }}-1_amd64.deb"
-#         dest: "./vector-{{ vector_version }}.deb"
-#         mode: "0777"
-#       notify: Start vector service
-# # Workaround for latest version being named against a version number
-# - name: Get latest version
-#   uri:
-#     url: https://s3.amazonaws.com/packages.timber.io/?prefix=vector/latest&max-keys=1
-#     return_content: true
-#   register: bucket_content
-#   when: vector_version == "latest"
-
-# - name: Set latest version
-#   set_fact:
-#     vector_version: "{{ bucket_content.content | regex_replace('.*\\n.*<Key>[^-]+-(?P<version>[\\d\\.]+)-.*','\\g<version>') }}"
-#   when: vector_version == "latest"
-
-#
-
-# - name: Install Vector (RedHat)
-#   yum:
-#     name: "https://packages.timber.io/vector/{{ version }}/vector-{{ package_version }}.{{ arch }}.rpm"
-#     state: present
-#     disable_gpg_check: yes # package is not signed
-#   notify:
-#     - restart vector
-#   vars:
-#     version: "{{ (vector_version == 'nightly')| bool | ternary('nightly/latest', vector_version) }}"
-#     package_version: "{{ vector_version is match('latest') | ternary(vector_version, vector_version ~ '-1') }}"
-#     arch: "{{ vector_redhat_arch[ansible_machine] }}"
-#   when: ansible_os_family == 'RedHat'
-
-# - name: Copy config
-#   template:
-#     src: "{{ vector_template }}"
-#     dest: "{{ vector_config_file }}"
-#     mode: 0644
-#   notify: restart vector
-
-# - name: Use the right config_file
-#   lineinfile:
-#     path: /etc/default/vector
-#     line: "VECTOR_CONFIG={{ vector_config_file }}"
-#     state: present
-
-# - name: Add vector user to docker group
-#   user:
-#     name: vector
-#     groups: docker
-#     append: yes
-#   when: add_vector_docker_group | default(no)
-#   notify: restart vector
-
-# - name: Add vector user to systemd-journal group
-#   user:
-#     name: vector
-#     groups: systemd-journal
-#     append: yes
-#   when: add_vector_journal_group | default(no)
-#   notify: restart vector
-
-# - name: Start Vector
-#   service:
-#     state: started
-#     enabled: yes
-#     name: vector
