@@ -42,26 +42,21 @@
   handlers:
     - name: Start vector service
       become: true
-      ansible.builtin.command:
-        cmd : [vector -w]
+      ansible.builtin.service:
+        name: vector
         state: restarted
   tasks:
     - name: Get vector distrib
       ansible.builtin.get_url:
-       url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-1.{{ vector_arch }}.rpm"
-       dest: "./vector-{{ vector_version }}.rpm"
-       mode: "0777"
-       validate_certs: 0
-      notify: Start vector service
+        url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-1.{{ vector_arch }}.rpm"
+        dest: "./vector-{{ vector_version }}.rpm"
+        mode: "0777"
+        validate_certs: 0
     - name: Install vector packages
       become: true
       ansible.builtin.yum:
         name:
           - vector-{{ vector_version }}.rpm
-    - name: Flush handlers to restart vector
-      ansible.builtin.meta: flush_handlers
-      notify: Start vector service  
-
     - name: Configure Vector | Ensure config directory exists
       ansible.builtin.file:
         path: "{{ vector_config_path }}"
@@ -70,7 +65,16 @@
 
     - name: Configure Vector | Template config
       ansible.builtin.template:
-        src: vector.toml.j2
-        mode: "0644"
+        src: vector.yaml.j2
+        mode: "0777"
         dest: "{{ vector_config_path }}/vector.yaml"
+    - name: Vector | change systemd unit
+      become: true
+      ansible.builtin.template:
+        src: vector.service.j2
+        dest: /usr/lib/systemd/system/vector.service
+        mode: "0777"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+        backup: true
       notify: Start vector service
