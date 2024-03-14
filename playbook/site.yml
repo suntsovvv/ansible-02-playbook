@@ -9,16 +9,18 @@
         state: restarted
   tasks:
     - block:
-        - name: Get clickhouse distrib
+        - name: Get clickhouse distrib 1
           ansible.builtin.get_url:
             url: "https://packages.clickhouse.com/rpm/stable/{{ item }}-{{ clickhouse_version }}.noarch.rpm"
             dest: "./{{ item }}-{{ clickhouse_version }}.rpm"
+            mode: "0777"
           with_items: "{{ clickhouse_packages }}"
       rescue:
-        - name: Get clickhouse distrib
+        - name: Get clickhouse distrib 2
           ansible.builtin.get_url:
             url: "https://packages.clickhouse.com/rpm/stable/clickhouse-common-static-{{ clickhouse_version }}.{{ clickhouse_arch }}.rpm"
             dest: "./clickhouse-common-static-{{ clickhouse_version }}.rpm"
+            mode: "0777"
     - name: Install clickhouse packages
       become: true
       ansible.builtin.yum:
@@ -28,11 +30,11 @@
           - clickhouse-server-{{ clickhouse_version }}.rpm
       notify: Start clickhouse service
     - name: Flush handlers
-      meta: flush_handlers
+      ansible.builtin.meta: flush_handlers
     - name: Create database
       ansible.builtin.command: "clickhouse-client -q 'create database logs;'"
       register: create_db
-      failed_when: create_db.rc != 0 and create_db.rc !=82
+      failed_when: create_db.rc != 0 and create_db.rc != 82
       changed_when: create_db.rc == 0
 
 - name: Install Vector
@@ -43,18 +45,21 @@
       ansible.builtin.service:
         name: vector
         state: restarted
-  tasks:   
+  tasks:
     - name: Get vector distrib
       ansible.builtin.get_url:
        url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-1.{{ vector_arch }}.rpm"
        dest: "./vector-{{ vector_version }}.rpm"
-       validate_certs: no
-       
+       mode: "0777"
+       validate_certs: 0
+      notify: Start vector service
     - name: Install vector packages
       become: true
       ansible.builtin.yum:
         name:
-           - vector-{{ vector_version }}.rpm
+          - vector-{{ vector_version }}.rpm
+    - name: Flush handlers to restart vector
+      ansible.builtin.meta: flush_handlers
 
     - name: Configure Vector | Ensure config directory exists
       ansible.builtin.file:
@@ -67,6 +72,3 @@
         src: vector.toml.j2
         mode: "0644"
         dest: "{{ vector_config_path }}/vector.toml"
-    - name: Start vector
-      ansible.builtin.shell: vector --config /etc/vector/vector.toml
-     
