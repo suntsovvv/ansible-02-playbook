@@ -1,5 +1,4 @@
 # Домашнее задание к занятию 2 «Работа с Playbook»
-
 4 -
 ```bash
 SSH password: 
@@ -234,3 +233,4 @@ vector                     : ok=6    changed=0    unreachable=0    failed=0    s
 ```
 9 -   
 Ссылка на README.md-файл плейбука: https://github.com/suntsovvv/ansible-02-playbook/blob/main/playbook/README.md
+10 - 
