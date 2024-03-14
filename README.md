@@ -233,4 +233,4 @@ clickhouse                 : ok=4    changed=0    unreachable=0    failed=0    s
 vector                     : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
 9 -   
-Ссылка на README.md-файл плейбука: 
+Ссылка на README.md-файл плейбука: https://github.com/suntsovvv/ansible-02-playbook/blob/main/playbook/README.md
