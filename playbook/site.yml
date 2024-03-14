@@ -42,8 +42,8 @@
   handlers:
     - name: Start vector service
       become: true
-      ansible.builtin.service:
-        name: vector
+      ansible.builtin.command:
+        cmd : [vector -w]
         state: restarted
   tasks:
     - name: Get vector distrib
@@ -60,6 +60,7 @@
           - vector-{{ vector_version }}.rpm
     - name: Flush handlers to restart vector
       ansible.builtin.meta: flush_handlers
+      notify: Start vector service  
 
     - name: Configure Vector | Ensure config directory exists
       ansible.builtin.file:
@@ -71,4 +72,5 @@
       ansible.builtin.template:
         src: vector.toml.j2
         mode: "0644"
-        dest: "{{ vector_config_path }}/vector.toml"
+        dest: "{{ vector_config_path }}/vector.yaml"
+      notify: Start vector service

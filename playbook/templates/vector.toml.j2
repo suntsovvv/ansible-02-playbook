@@ -1,10 +1,22 @@
-# Set global options
-data_dir = "/var/lib/vector"
+sources:
+  generate_syslog:
+    type:   "demo_logs"
+    format: "syslog"
+    count:  100
 
-[sources.in]
-    type = "stdin"
+transforms:
+  remap_syslog:
+    inputs:
+      - "generate_syslog"
+    type:   "remap"
+    source: |
+            structured = parse_syslog!(.message)
+            . = merge(., structured)            
 
-[sinks.out]
-    inputs = ["in"]
-    type = "console"
-    encoding.codec = "text"
+sinks:
+  emit_syslog:
+    inputs:
+      - "remap_syslog"
+    type: "console"
+    encoding:
+      codec: "json"  
