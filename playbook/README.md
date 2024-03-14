@@ -15,10 +15,8 @@ clickhouse_arch: <"arch">
 vector_version: <"version">
 vector_arch: <"arch">
 ```
-
-
-
-### Install
+Конфигурация для vector содержится в tenplate файле vector.yaml.j2
+### Run
 Для запуска можно использовать следующую команду после того, как хосты были прописаны в `/inventory/prod.yml`:
 ```shell
 ansible-playbook -i /inventory/prod.yml site.yml
